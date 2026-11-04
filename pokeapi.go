@@ -109,7 +109,6 @@ type Pokemon struct {
 	} `json:"types"`
 }
 
-
 func fetchPokemon(cache *pokecache.Cache, name string) (Pokemon, error) {
 	url := baseURL + "/pokemon/" + name
 

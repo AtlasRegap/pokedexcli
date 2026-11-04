@@ -1,12 +1,12 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
+	"io"
 	"strings"
 
 	"github.com/AtlasRegap/pokedexcli/internal/pokecache"
+	"github.com/peterh/liner"
 )
 
 type config struct {
@@ -15,23 +15,31 @@ type config struct {
 	prevLocationsURL *string
 	cache            *pokecache.Cache
 	caughtPokemon    map[string]Pokemon
+	line             *liner.State
 }
 
-
-
-
-
 func startRepl(cfg *config) {
-	scanner := bufio.NewScanner(os.Stdin)
+	line := liner.NewLiner()
+	defer line.Close()
+	line.SetCtrlCAborts(true)
+	cfg.line = line
+
 	for {
-		fmt.Print("Pokedex > ")
-		scanner.Scan()
-		input := scanner.Text()
+		input, err := line.Prompt("Pokedex > ")
+		if err == liner.ErrPromptAborted || err == io.EOF {
+			fmt.Println()
+			return
+		}
+		if err != nil {
+			fmt.Println("Error reading input:", err)
+			return
+		}
 
 		words := cleanInput(input)
 		if len(words) == 0 {
 			continue
 		}
+		line.AppendHistory(input)
 
 		commandName := words[0]
 		args := words[1:]
@@ -42,7 +50,7 @@ func startRepl(cfg *config) {
 			continue
 		}
 
-		err := command.callback(cfg, args...)
+		err = command.callback(cfg, args...)
 		if err != nil {
 			fmt.Println(err)
 		}

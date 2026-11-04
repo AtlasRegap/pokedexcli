@@ -54,12 +54,11 @@ func getCommands() map[string]cliCommand {
 			description: "Lists all the Pokemon you have caught",
 			callback:    commandPokedex,
 		},
-
-
 	}
 }
 
 func commandExit(cfg *config, args ...string) error {
+	cfg.line.Close()
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
@@ -160,8 +159,6 @@ func commandCatch(cfg *config, args ...string) error {
 	return nil
 }
 
-
-
 func commandInspect(cfg *config, args ...string) error {
 	if len(args) != 1 {
 		return fmt.Errorf("usage: inspect <pokemon_name>")
@@ -189,7 +186,6 @@ func commandInspect(cfg *config, args ...string) error {
 	}
 	return nil
 }
-
 
 func commandPokedex(cfg *config, args ...string) error {
 	if len(cfg.caughtPokemon) == 0 {
