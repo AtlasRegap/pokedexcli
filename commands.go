@@ -54,6 +54,11 @@ func getCommands() map[string]cliCommand {
 			description: "Lists all the Pokemon you have caught",
 			callback:    commandPokedex,
 		},
+		"battle": {
+			name:        "battle",
+			description: "Battle one of your Pokemon against a wild Pokemon",
+			callback:    commandBattle,
+		},
 	}
 }
 
@@ -196,6 +201,36 @@ func commandPokedex(cfg *config, args ...string) error {
 	fmt.Println("Your Pokedex:")
 	for name := range cfg.caughtPokemon {
 		fmt.Printf(" - %s\n", name)
+	}
+	return nil
+}
+
+func commandBattle(cfg *config, args ...string) error {
+	if len(args) != 2 {
+		return fmt.Errorf("usage: battle <your_pokemon> <opponent>")
+	}
+
+	mine, ok := cfg.caughtPokemon[args[0]]
+	if !ok {
+		return fmt.Errorf("you have not caught %s", args[0])
+	}
+
+	opponent, err := fetchPokemon(cfg.cache, args[1])
+	if err != nil {
+		return err
+	}
+
+	yours := newFighter(mine)
+	wild := newFighter(opponent)
+	wild.name = "wild " + wild.name
+
+	fmt.Printf("Your %s vs %s!\n", yours.name, wild.name)
+	winner := simulateBattle(yours, wild)
+
+	if winner == yours.name {
+		fmt.Println("You won the battle!")
+	} else if winner == wild.name {
+		fmt.Println("You lost the battle!")
 	}
 	return nil
 }

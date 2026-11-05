@@ -61,3 +61,16 @@ func TestReapLoop(t *testing.T) {
 		t.Errorf("expected key to be reaped")
 	}
 }
+
+func TestFreshEntryStays(t *testing.T) {
+	interval := 100 * time.Millisecond
+	cache := NewCache(interval)
+	cache.Add("https://example.com", []byte("testdata"))
+
+	time.Sleep(interval / 4)
+
+	_, ok := cache.Get("https://example.com")
+	if !ok {
+		t.Errorf("expected fresh entry to still be in the cache")
+	}
+}

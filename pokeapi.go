@@ -31,64 +31,34 @@ type areaDetail struct {
 	} `json:"pokemon_encounters"`
 }
 
-func fetchWithCache(cache *pokecache.Cache, url string) ([]byte, error) {
+func getJSON(cache *pokecache.Cache, url string, target any) error {
 	data, found := cache.Get(url)
 	if found {
-		return data, nil
+		return json.Unmarshal(data, target)
 	}
 
 	res, err := http.Get(url)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode > 299 {
-		return nil, fmt.Errorf("bad status code: %d", res.StatusCode)
+		return fmt.Errorf("bad status code: %d", res.StatusCode)
 	}
 
 	data, err = io.ReadAll(res.Body)
 	if err != nil {
-		return nil, err
+		return err
+	}
+
+	err = json.Unmarshal(data, target)
+	if err != nil {
+		return err
 	}
 
 	cache.Add(url, data)
-	return data, nil
-}
-
-func fetchLocationAreas(cache *pokecache.Cache, pageURL *string) (locationAreasResponse, error) {
-	url := baseURL + "/location-area"
-	if pageURL != nil {
-		url = *pageURL
-	}
-
-	data, err := fetchWithCache(cache, url)
-	if err != nil {
-		return locationAreasResponse{}, err
-	}
-
-	var resp locationAreasResponse
-	err = json.Unmarshal(data, &resp)
-	if err != nil {
-		return locationAreasResponse{}, err
-	}
-	return resp, nil
-}
-
-func fetchAreaDetail(cache *pokecache.Cache, areaName string) (areaDetail, error) {
-	url := baseURL + "/location-area/" + areaName
-
-	data, err := fetchWithCache(cache, url)
-	if err != nil {
-		return areaDetail{}, err
-	}
-
-	var area areaDetail
-	err = json.Unmarshal(data, &area)
-	if err != nil {
-		return areaDetail{}, err
-	}
-	return area, nil
+	return nil
 }
 
 type Pokemon struct {
@@ -109,16 +79,36 @@ type Pokemon struct {
 	} `json:"types"`
 }
 
+func fetchLocationAreas(cache *pokecache.Cache, pageURL *string) (locationAreasResponse, error) {
+	url := baseURL + "/location-area"
+	if pageURL != nil {
+		url = *pageURL
+	}
+
+	var resp locationAreasResponse
+	err := getJSON(cache, url, &resp)
+	if err != nil {
+		return locationAreasResponse{}, err
+	}
+	return resp, nil
+}
+
+func fetchAreaDetail(cache *pokecache.Cache, areaName string) (areaDetail, error) {
+	url := baseURL + "/location-area/" + areaName
+
+	var area areaDetail
+	err := getJSON(cache, url, &area)
+	if err != nil {
+		return areaDetail{}, err
+	}
+	return area, nil
+}
+
 func fetchPokemon(cache *pokecache.Cache, name string) (Pokemon, error) {
 	url := baseURL + "/pokemon/" + name
 
-	data, err := fetchWithCache(cache, url)
-	if err != nil {
-		return Pokemon{}, err
-	}
-
 	var p Pokemon
-	err = json.Unmarshal(data, &p)
+	err := getJSON(cache, url, &p)
 	if err != nil {
 		return Pokemon{}, err
 	}

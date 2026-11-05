@@ -9,7 +9,7 @@ import (
 func main() {
 	cfg := &config{
 		commands:      getCommands(),
-		cache:         pokecache.NewCache(5 * time.Second),
+		cache:         pokecache.NewCache(5 * time.Minute),
 		caughtPokemon: make(map[string]Pokemon),
 	}
 	startRepl(cfg)
